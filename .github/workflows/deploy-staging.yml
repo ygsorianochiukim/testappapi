@@ -1,0 +1,32 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to OVH Staging
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -e
+            if [ ! -d /var/www/backend-staging ]; then
+              git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/backend-staging
+            fi
+            cd /var/www/backend-staging
+            git checkout develop
+            git pull origin develop
+            composer install
+            php artisan migrate
+            php artisan optimize
