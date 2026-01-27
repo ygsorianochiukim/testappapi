@@ -21,12 +21,21 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             set -e
-            if [ ! -d /var/www/html/ ]; then
+
+            # Ensure correct permissions
+            sudo chown -R ubuntu:ubuntu /var/www || true
+
+            # Clone if NOT a git repository
+            if [ ! -d /var/www/html/.git ]; then
+              rm -rf /var/www/html
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/html
             fi
+
             cd /var/www/html
+            git fetch origin
             git checkout develop
             git pull origin develop
-            composer install
-            php artisan migrate
+
+            composer install --no-interaction --prefer-dist
+            php artisan migrate --force
             php artisan optimize
