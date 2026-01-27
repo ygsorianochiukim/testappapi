@@ -34,7 +34,7 @@ jobs:
             cd /var/www/html
             git fetch origin
             git checkout develop
-            git pull origin develop
+            git pull origin develop 
 
             composer install --no-interaction --prefer-dist
             php artisan migrate --force
