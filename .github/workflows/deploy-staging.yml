@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             set -e
-            if [ ! -d /var/www/backend-staging ]; then
+            if [ ! -d /var/www/html/ ]; then
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/backend-staging
             fi
             cd /var/www/backend-staging
