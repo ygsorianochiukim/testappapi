@@ -24,7 +24,7 @@ jobs:
             if [ ! -d /var/www/html/ ]; then
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/html
             fi
-            cd /var/www/backend-staging
+            cd /var/www/html
             git checkout develop
             git pull origin develop
             composer install
