@@ -47,10 +47,10 @@ jobs:
             echo "APP_ENV=production" >> .env
             echo "APP_DEBUG=false" >> .env
             echo "APP_URL=${{ secrets.PROD_APP_URL }}" >> .env
-            
-            echo "DB_DATABASE=${{ secrets.PROD_DB_NAME }}" >> .env
-            echo "DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> .env
-            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
+
+            echo "DB_DATABASE=${{ secrets.DB_NAME }}" >> .env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
 
             echo "🔑 Laravel setup..."
             php artisan key:generate --force
