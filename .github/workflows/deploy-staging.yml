@@ -28,12 +28,12 @@ jobs:
             sudo chown -R ubuntu:ubuntu /var/www || true
 
             # Clone repo if first deploy
-            if [ ! -d /var/www/html/.git ]; then
-              rm -rf /var/www/html
-              git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/html
+            if [ ! -d /var/www/staging/.git ]; then
+              rm -rf /var/www/staging
+              git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/staging
             fi
 
-            cd /var/www/html
+            cd /var/www/staging
 
             git fetch origin
             git checkout develop
