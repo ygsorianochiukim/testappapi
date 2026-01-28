@@ -50,7 +50,7 @@ jobs:
 
             sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${{ secrets.PROD_DB_NAME }}|" .env
             sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${{ secrets.DB_USERNAME }}|" .env
-            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env s
 
             echo "🔑 Laravel setup..."
             php artisan key:generate --force
