@@ -44,13 +44,13 @@ jobs:
             echo "⚙️ Preparing environment..."
             cp .env.example .env || true
 
-            sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
-            sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
-            sed -i "s|^APP_URL=.*|APP_URL=${{ secrets.PROD_APP_URL }}|" .env
-
-            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${{ secrets.PROD_DB_NAME }}|" .env
-            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${{ secrets.DB_USERNAME }}|" .env
-            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env s
+            echo "APP_ENV=production" >> .env
+            echo "APP_DEBUG=false" >> .env
+            echo "APP_URL=${{ secrets.PROD_APP_URL }}" >> .env
+            
+            echo "DB_DATABASE=${{ secrets.PROD_DB_NAME }}" >> .env
+            echo "DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
 
             echo "🔑 Laravel setup..."
             php artisan key:generate --force
