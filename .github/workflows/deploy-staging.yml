@@ -18,7 +18,7 @@ jobs:
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          key: ${{ secrets.STAGING_SSH_KEY }} 
           script: |
             set -e
 
