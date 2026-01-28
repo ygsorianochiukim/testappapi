@@ -18,24 +18,51 @@ jobs:
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }} 
+          key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             set -e
 
-            # Ensure correct permissions
+            echo "🚀 Starting deployment..."
+
+            # Ensure correct permissions (requires NOPASSWD sudo)
             sudo chown -R ubuntu:ubuntu /var/www || true
 
-            # Clone if NOT a git repository
+            # Clone repo if first deploy
             if [ ! -d /var/www/html/.git ]; then
               rm -rf /var/www/html
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/html
             fi
 
             cd /var/www/html
+
             git fetch origin
             git checkout develop
-            git pull origin develop 
+            git pull origin develop
 
-            composer install --no-interaction --prefer-dist 
+            echo "📦 Installing dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "⚙️ Preparing environment..."
+            cp .env.example .env || true
+
+            sed -i "s|^APP_ENV=.*|APP_ENV=staging|" .env
+            sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
+            sed -i "s|^APP_URL=.*|APP_URL=${{ secrets.STAGING_APP_URL }}|" .env
+
+            sed -i "s|^DB_HOST=.*|DB_HOST=${{ secrets.DB_HOST }}|" .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${{ secrets.DB_NAME }}|" .env
+            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${{ secrets.DB_USERNAME }}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env
+
+            echo "🔑 Generating app key & clearing cache..."
+            php artisan key:generate --force
+            php artisan config:clear
+            php artisan config:cache
+
+            echo "🗄️ Running migrations..."
             php artisan migrate --force
+
+            echo "⚡ Optimizing application..."
             php artisan optimize
+
+            echo "✅ Deployment finished successfully!"
