@@ -21,13 +21,10 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             set -e
+            echo "🚀 Starting STAGING deployment..."
 
-            echo "🚀 Starting deployment..."
-
-            # Ensure correct permissions (requires NOPASSWD sudo)
             sudo chown -R ubuntu:ubuntu /var/www || true
 
-            # Clone repo if first deploy
             if [ ! -d /var/www/staging/.git ]; then
               rm -rf /var/www/staging
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/staging
@@ -43,18 +40,29 @@ jobs:
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
             echo "⚙️ Preparing environment..."
-            cp .env.example .env || true
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+
+            # Export secrets for safer usage
+            export APP_URL="${{ secrets.STAGING_APP_URL }}"
+            export DB_DATABASE="${{ secrets.DB_NAME }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
             sed -i "s|^APP_ENV=.*|APP_ENV=staging|" .env
             sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
-            sed -i "s|^APP_URL=.*|APP_URL=${{ secrets.STAGING_APP_URL }}|" .env
+            sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE}|" .env
+            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
 
-            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${{ secrets.DB_NAME }}|" .env
-            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${{ secrets.DB_USERNAME }}|" .env
-            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env
+            echo "🔑 Ensuring APP_KEY exists..."
+            if ! grep -q "^APP_KEY=" .env || grep -q "^APP_KEY=$" .env; then
+              php artisan key:generate
+            fi
 
-            echo "🔑 Generating app key & clearing cache..."
-            php artisan key:generate --force
+            echo "🧹 Clearing & caching config..."
             php artisan config:clear
             php artisan config:cache
 
@@ -64,4 +72,4 @@ jobs:
             echo "⚡ Optimizing application..."
             php artisan optimize
 
-            echo "✅ Deployment finished successfully!"
+            echo "✅ STAGING deployment finished successfully!"
