@@ -16,17 +16,14 @@ jobs:
       - name: Deploy to OVH Production
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             set -e
-
             echo "🚀 Starting PRODUCTION deployment..."
 
-            sudo chown -R ubuntu:ubuntu /var/www || true
-
-            # Clone repo if first deploy
+            # First-time clone only
             if [ ! -d /var/www/production/.git ]; then
               rm -rf /var/www/production
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/production
@@ -34,26 +31,38 @@ jobs:
 
             cd /var/www/production
 
+            # Force exact mirror of main branch
             git fetch origin
+            git reset --hard origin/main
+            git clean -fd
             git checkout main
-            git pull origin main
 
             echo "📦 Installing dependencies (no dev)..."
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
             echo "⚙️ Preparing environment..."
-            cp .env.example .env || true
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
 
-            echo "APP_ENV=production" >> .env
-            echo "APP_DEBUG=false" >> .env
-            echo "APP_URL=${{ secrets.PROD_APP_URL }}" >> .env
+            export APP_URL="${{ secrets.PROD_APP_URL }}"
+            export DB_DATABASE="${{ secrets.DB_NAME }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
-            echo "DB_DATABASE=${{ secrets.DB_NAME }}" >> .env
-            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
+            sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
+            sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE}|" .env
+            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
 
-            echo "🔑 Laravel setup..."
-            php artisan key:generate --force
+            echo "🔑 Ensuring APP_KEY exists..."
+            if ! grep -q "^APP_KEY=" .env || grep -q "^APP_KEY=$" .env; then
+              php artisan key:generate
+            fi
+
+            echo "🧹 Clearing & caching config..."
             php artisan config:clear
             php artisan config:cache
 
