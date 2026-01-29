@@ -31,11 +31,11 @@ jobs:
 
             cd /var/www/production
 
-            # Force exact mirror of main branch
             git fetch origin
+            git remote prune origin
+            git checkout main
             git reset --hard origin/main
             git clean -fd
-            git checkout main
 
             echo "📦 Installing dependencies (no dev)..."
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev

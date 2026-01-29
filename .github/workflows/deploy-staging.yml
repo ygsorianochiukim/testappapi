@@ -23,8 +23,6 @@ jobs:
             set -e
             echo "🚀 Starting STAGING deployment..."
 
-            sudo chown -R ubuntu:ubuntu /var/www || true
-
             if [ ! -d /var/www/staging/.git ]; then
               rm -rf /var/www/staging
               git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/staging
@@ -33,8 +31,10 @@ jobs:
             cd /var/www/staging
 
             git fetch origin
+            git remote prune origin
             git checkout develop
-            git pull origin develop
+            git reset --hard origin/develop
+            git clean -fd
 
             echo "📦 Installing dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
