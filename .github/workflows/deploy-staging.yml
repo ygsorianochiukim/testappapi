@@ -29,9 +29,9 @@ jobs:
             fi
 
             cd /var/www/staging
-
-            git fetch origin
+            
             git remote prune origin
+            git fetch origin
             git checkout develop
             git reset --hard origin/develop
             git clean -fd

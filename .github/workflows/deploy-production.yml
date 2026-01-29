@@ -31,8 +31,8 @@ jobs:
 
             cd /var/www/production
 
-            git fetch origin
             git remote prune origin
+            git fetch origin
             git checkout main
             git reset --hard origin/main
             git clean -fd
