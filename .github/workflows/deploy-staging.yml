@@ -47,13 +47,17 @@ jobs:
             # Export secrets for safer usage
             export APP_URL="${{ secrets.STAGING_APP_URL }}"
             export DB_DATABASE="${{ secrets.DB_NAME }}"
+            export DB_HOST="${{ secrets.DB_HOST }}"
+            export DB_PORT="${{ secrets.DB_PORT }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
             sed -i "s|^APP_ENV=.*|APP_ENV=staging|" .env
             sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
             sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
+            sed -i "s|^DB_HOST=.*|DB_HOST=${DB_HOST}|" .env
             sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE}|" .env
+            sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT}|" .env
             sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME}|" .env
             sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
 
@@ -65,9 +69,6 @@ jobs:
             echo "🧹 Clearing & caching config..."
             php artisan config:clear
             php artisan config:cache
-
-            echo "🗄️ Running migrations..."
-            php artisan migrate --force
 
             echo "⚡ Optimizing application..."
             php artisan optimize
