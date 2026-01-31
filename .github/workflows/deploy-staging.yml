@@ -23,53 +23,69 @@ jobs:
             set -e
             echo "🚀 Starting STAGING deployment..."
 
-            if [ ! -d /var/www/staging/.git ]; then
-              rm -rf /var/www/staging
-              git clone https://github.com/ygsorianochiukim/testappapi.git /var/www/staging
+            APP_PATH="/var/www/staging"
+
+            if [ ! -d "$APP_PATH/.git" ]; then
+              echo "📥 Cloning repository..."
+              rm -rf $APP_PATH
+              git clone https://github.com/ygsorianochiukim/testappapi.git $APP_PATH
             fi
 
-            cd /var/www/staging
-            
-            git remote prune origin
+            cd $APP_PATH
+
+            echo "🔄 Syncing develop branch..."
             git fetch origin
             git checkout develop
             git reset --hard origin/develop
             git clean -fd
 
-            echo "📦 Installing dependencies..."
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+            echo "📦 Installing Composer dependencies..."
+            composer install \
+              --no-dev \
+              --no-interaction \
+              --prefer-dist \
+              --optimize-autoloader
 
             echo "⚙️ Preparing environment..."
             if [ ! -f .env ]; then
               cp .env.example .env
             fi
 
-            # Export secrets for safer usage
-            export APP_URL="${{ secrets.STAGING_APP_URL }}"
-            export DB_DATABASE="${{ secrets.DB_NAME }}"
-            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-
+            # --- Application ---
             sed -i "s|^APP_ENV=.*|APP_ENV=staging|" .env
             sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
-            sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
-            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE}|" .env
-            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME}|" .env
-            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" .env
+            sed -i "s|^APP_URL=.*|APP_URL=${{ secrets.STAGING_APP_URL }}|" .env
+
+            # --- Database (READ-ONLY REPLICA) ---
+            sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env
+            sed -i "s|^DB_HOST=.*|DB_HOST=${{ secrets.DB_HOST }}|" .env
+            sed -i "s|^DB_PORT=.*|DB_PORT=${{ secrets.DB_PORT }}|" .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${{ secrets.DB_NAME }}|" .env
+            sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${{ secrets.DB_USERNAME }}|" .env
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|" .env
+
+            # --- REPLICA-SAFE RUNTIME DRIVERS ---
+            sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=file|" .env
+            sed -i "s|^CACHE_STORE=.*|CACHE_STORE=file|" .env
+            sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=sync|" .env
+
+            # --- Session domain ---
+            sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=staging.rp-vespera.cloud|" .env
 
             echo "🔑 Ensuring APP_KEY exists..."
-            if ! grep -q "^APP_KEY=" .env || grep -q "^APP_KEY=$" .env; then
+            if ! grep -q "^APP_KEY=base64:" .env; then
               php artisan key:generate
             fi
 
-            echo "🧹 Clearing & caching config..."
-            php artisan config:clear
+            echo "🧹 Clearing all caches..."
+            php artisan optimize:clear
+
+            echo "🔐 Fixing permissions..."
+            chmod -R ug+rwX storage bootstrap/cache
+
+            echo "⚡ Caching config..."
             php artisan config:cache
-
-            echo "🗄️ Running migrations..."
-            php artisan migrate --force
-
-            echo "⚡ Optimizing application..."
-            php artisan optimize
+            php artisan route:cache
+            php artisan view:cache
 
             echo "✅ STAGING deployment finished successfully!"
