@@ -81,8 +81,7 @@ jobs:
             php artisan optimize:clear
 
             echo "🔐 Fixing permissions..."
-            chown -R www-data:www-data storage bootstrap/cache
-            chmod -R 775 storage bootstrap/cache
+            chmod -R ug+rwX storage bootstrap/cache
 
             echo "⚡ Caching config..."
             php artisan config:cache
